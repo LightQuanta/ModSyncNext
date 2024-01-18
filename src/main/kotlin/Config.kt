@@ -2,6 +2,7 @@ package tech.lq0.modSyncNext
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.peanuuutz.tomlkt.Toml
 import net.peanuuutz.tomlkt.TomlComment
@@ -60,8 +61,10 @@ fun requireString(message: String, condition: ((String) -> Boolean)?): String {
 fun getConfig(): Config {
     if (File("msnconfig.txt").exists()) return Toml.decodeFromString(File("msnconfig.txt").readText())
 
-    val syncServer: String =
-        requireString("请输入同步服务器：") { it.startsWith("http://") || it.startsWith("https://") }
+    var syncServer: String =
+        requireString("请输入同步服务器（不是Minecraft版本）：") { it.startsWith("http://") || it.startsWith("https://") }
+    if (!syncServer.endsWith("/")) syncServer += "/"
+
     val minecraftVersion = requireString("请输入要同步的Minecraft版本：") { it.isNotBlank() }
 
     if (File("mcsyncconfig-1.0.json").exists()) {
@@ -81,10 +84,11 @@ fun getConfig(): Config {
                 syncConfig = true
             )
         )
+        File("msnconfig.txt").writeText(Toml.encodeToString(newConfig))
         return newConfig
     }
 
-    return Config(
+    val defaultConfig = Config(
         version = "2.0",
         sync = SyncConfig(
             server = syncServer,
@@ -99,4 +103,6 @@ fun getConfig(): Config {
             syncConfig = true
         )
     )
+    File("msnconfig.txt").writeText(Toml.encodeToString(defaultConfig))
+    return defaultConfig
 }
