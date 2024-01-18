@@ -1,5 +1,10 @@
 package tech.lq0.modSyncNext
 
-fun main() {
+import kotlinx.serialization.encodeToString
+import net.peanuuutz.tomlkt.Toml
 
+fun main() {
+    Toml.encodeToString(
+        getConfig()
+    ).also(::println)
 }
