@@ -24,11 +24,26 @@ data class SyncConfig(
     val autoUpdate: Boolean = false,
     @TomlComment("是否在程序启动后自动开始同步")
     val autoSync: Boolean = false,
-    @TomlComment("同步完成后的行为")
-    val actionAfterSync: Int = 0,
+    @TomlComment(
+        """
+        同步完成后的行为，可用的值为：
+        Exit ：同步后退出程序
+        DoNothing：同步后等待用户操作
+        ExecuteCommand：同步后执行命令
+        ExecuteCommandAndExit：同步后执行命令并退出
+        """
+    )
+    val actionAfterSync: ActionAfterSync = ActionAfterSync.DoNothing,
     @TomlComment("若行为为执行命令，则执行下述命令")
     val command: String = "",
 )
+
+enum class ActionAfterSync {
+    Exit,
+    DoNothing,
+    ExecuteCommand,
+    ExecuteCommandAndExit
+}
 
 @Serializable
 data class MinecraftConfig(
@@ -74,7 +89,12 @@ fun getConfig(): Config {
             sync = SyncConfig(
                 server = syncServer,
                 autoSync = oldConfig.autoSync,
-                actionAfterSync = oldConfig.actionAfterSync,
+                actionAfterSync = when (oldConfig.actionAfterSync) {
+                    0 -> ActionAfterSync.Exit
+                    2 -> ActionAfterSync.ExecuteCommand
+                    3 -> ActionAfterSync.ExecuteCommandAndExit
+                    else -> ActionAfterSync.DoNothing
+                },
                 command = oldConfig.command,
                 autoUpdate = oldConfig.autoUpdate
             ),
@@ -93,7 +113,7 @@ fun getConfig(): Config {
         sync = SyncConfig(
             server = syncServer,
             autoSync = false,
-            actionAfterSync = 0,
+            actionAfterSync = ActionAfterSync.DoNothing,
             command = "",
             autoUpdate = false
         ),
