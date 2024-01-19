@@ -8,6 +8,8 @@ import net.peanuuutz.tomlkt.Toml
 import net.peanuuutz.tomlkt.TomlComment
 import java.io.File
 
+val globalConfig: Config by lazy { getConfig() }
+
 @Serializable
 data class Config(
     @TomlComment("配置文件版本，勿动")
@@ -73,7 +75,7 @@ fun requireString(message: String, condition: ((String) -> Boolean)?): String {
     }
 }
 
-fun getConfig(): Config {
+private fun getConfig(): Config {
     if (File("msnconfig.txt").exists()) return Toml.decodeFromString(File("msnconfig.txt").readText())
 
     var syncServer: String =
