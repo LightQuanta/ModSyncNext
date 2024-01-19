@@ -5,6 +5,7 @@ import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.github.kittinunf.fuel.httpGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.fusesource.jansi.Ansi.ansi
 import java.io.File
 import java.net.URLEncoder
 import java.security.MessageDigest
@@ -18,7 +19,8 @@ private fun getSha256(path: String): String {
 
 private fun Map<String, String>.printModsInfo() =
     println(
-        this.map { (k, v) -> "\u001B[33m$v\u001B[0m -> \u001B[34m$k\u001B[0m" }.joinToString("\n").ifEmpty { "（无）" })
+        this.map { (k, v) -> ansi().fgYellow().a(v).reset().a(" -> ").fgBlue().a(k).reset() }.joinToString("\n")
+            .ifEmpty { "（无）" })
 
 private fun computeAllHashForFolder(path: String): Map<String, String> {
     if (!File(path).exists()) File(path).mkdir()
@@ -35,7 +37,7 @@ suspend fun syncMod(version: String) {
     val modsHash = computeAllHashForFolder(modDir)
     val customModsHash = computeAllHashForFolder("$baseDir/$version/custommods/")
 
-    println("\u001B[36m[自定义mod]\u001B[0m")
+    println(ansi().fgCyan().a("[自定义mod]").reset())
     customModsHash.printModsInfo()
 
     val server = globalConfig.sync.server
@@ -45,7 +47,7 @@ suspend fun syncMod(version: String) {
     val csv = result.fold(
         { data -> data },
         { error ->
-            println("\u001B[31m获取mod列表出错：$error\u001B[0m")
+            println(ansi().fgRed().a("获取mod列表出错：$error").reset())
             println("按回车退出")
             readln()
             exitProcess(0)
@@ -57,13 +59,13 @@ suspend fun syncMod(version: String) {
     val modsToRemove = modsHash - serverModsHash.keys - customModsHash.keys
     val modsToCopy = customModsHash - modsHash.keys
 
-    println("\u001b[36m[下载mod列表]\u001B[0m")
+    println(ansi().fgCyan().a("[下载mod列表]").reset())
     modsToAdd.printModsInfo()
 
-    println("\u001B[36m[删除mod列表]\u001B[0m")
+    println(ansi().fgRed().a("[删除mod列表]").reset())
     modsToRemove.printModsInfo()
 
-    println("\u001B[32m1. 开始下载mod\u001B[0m")
+    println(ansi().fgGreen().a("1. 开始下载mod").reset())
     var i = 1
     for (fileName in modsToAdd.values) {
         println("[$i/${modsToAdd.size}] $fileName")
@@ -75,7 +77,7 @@ suspend fun syncMod(version: String) {
         }".httpGet().awaitByteArrayResponseResult().third.fold(
             { data -> data },
             { error ->
-                println("\u001B[31m下载mod出错：$error\u001B[0m")
+                println(ansi().fgRed().a("下载mod出错：$error").reset())
                 println("按回车退出")
                 readln()
                 exitProcess(0)
@@ -85,7 +87,7 @@ suspend fun syncMod(version: String) {
         i++
     }
 
-    println("\u001B[31m2. 开始删除mod\u001B[0m")
+    println(ansi().fgRed().a("2. 开始删除mod").reset())
     i = 1
     for (fileName in modsToRemove.values) {
         println("[$i/${modsToRemove.size}] $fileName")
@@ -93,7 +95,7 @@ suspend fun syncMod(version: String) {
         i++
     }
 
-    println("\u001B[33m3. 开始复制本地mod\u001B[0m")
+    println(ansi().fgYellow().a("3. 开始复制本地mod").reset())
     i = 1
     for (fileName in modsToCopy.values) {
         println("[$i/${modsToCopy.size}] $fileName")
@@ -103,5 +105,5 @@ suspend fun syncMod(version: String) {
         i++
     }
 
-    println("\u001B[36m同步完成！\u001B[0m")
+    println(ansi().fgCyan().a("同步完成！").reset())
 }

@@ -28,6 +28,7 @@ dependencies {
     implementation("net.peanuuutz.tomlkt:tomlkt:0.3.7")
     implementation("com.github.kittinunf.fuel:fuel:2.3.1")
     implementation("com.github.kittinunf.fuel:fuel-coroutines:2.3.1")
+    implementation("org.fusesource.jansi:jansi:2.4.1")
 }
 
 kotlin {
