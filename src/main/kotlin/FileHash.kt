@@ -35,14 +35,17 @@ private fun computeAllHashForFolder(path: String): Map<String, String> {
 suspend fun syncMod(version: String) {
     val minecraftPath = if (globalConfig.minecraft.isolate) "$versionDir/$version" else ".minecraft"
     val modDir = "$minecraftPath/mods/"
-    val modsHash = computeAllHashForFolder(modDir)
-    val customModsHash = computeAllHashForFolder("$minecraftPath/custommods/")
 
-    println(ansi().fgCyan().a("[自定义mod]").reset())
+    println(ansi().fgCyan().a("正在校验本地mod...").reset())
+    val modsHash = computeAllHashForFolder(modDir)
+
+    println(ansi().fgCyan().a("正在校验自定义mod...").reset())
+    val customModsHash = computeAllHashForFolder("$minecraftPath/custommods/")
     customModsHash.printModsInfo()
 
     val server = globalConfig.sync.server
 
+    println(ansi().fgCyan().a("正在获取mod列表...").reset())
     val result = "$server/filelist-$version.csv".httpGet().awaitStringResponseResult().third
 
     val csv = result.fold(
@@ -60,11 +63,15 @@ suspend fun syncMod(version: String) {
     val modsToRemove = modsHash - serverModsHash.keys - customModsHash.keys
     val modsToCopy = customModsHash - modsHash.keys
 
-    println(ansi().fgCyan().a("[下载mod列表]").reset())
+    println(ansi().fgCyan().a("[要下载的mod列表]").reset())
     modsToAdd.printModsInfo()
 
-    println(ansi().fgRed().a("[删除mod列表]").reset())
+    println(ansi().fgRed().a("[要删除的mod列表]").reset())
     modsToRemove.printModsInfo()
+
+    println()
+    println(ansi().fgCyan().a("[同步开始]").reset())
+    println()
 
     println(ansi().fgGreen().a("1. 开始下载mod").reset())
     var i = 1
@@ -107,4 +114,7 @@ suspend fun syncMod(version: String) {
     }
 
     println(ansi().fgCyan().a("同步完成！").reset())
+    println("按回车退出")
+    readln()
+    exitProcess(0)
 }

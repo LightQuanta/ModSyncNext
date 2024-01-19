@@ -6,6 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.peanuuutz.tomlkt.Toml
 import net.peanuuutz.tomlkt.TomlComment
+import org.fusesource.jansi.Ansi.ansi
 import java.io.File
 
 val globalConfig: Config by lazy { getConfig() }
@@ -107,6 +108,7 @@ private fun getConfig(): Config {
             )
         )
         File("msnconfig.txt").writeText(Toml.encodeToString(newConfig))
+        println(ansi().fgGreen().a("已迁移旧版配置文件！").reset())
         return newConfig
     }
 

@@ -19,6 +19,7 @@ fun main() = runBlocking {
     // TODO 修改为正确读取配置文件并执行对应操作
     val version = globalConfig.minecraft.version
 
+    println(ansi().fgCyan().a("ModSyncNext").fgRgb(128, 128, 128).a(" by ").fgBrightCyan().a("Light_Quanta").reset())
     syncMod(version)
 
     AnsiConsole.systemUninstall()
