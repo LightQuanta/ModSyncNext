@@ -21,10 +21,7 @@ private fun Map<String, String>.printModsInfo() =
         this.map { (k, v) -> "\u001B[33m$v\u001B[0m -> \u001B[34m$k\u001B[0m" }.joinToString("\n").ifEmpty { "（无）" })
 
 private fun computeAllHashForFolder(path: String): Map<String, String> {
-    if (!File(path).exists()) {
-        val s = File(path).mkdir()
-        println(s)
-    }
+    if (!File(path).exists()) File(path).mkdir()
 
     val mods = File(path).listFiles()?.filter { it.isFile }
 
