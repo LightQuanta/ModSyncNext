@@ -102,7 +102,7 @@ private fun getConfig(): Config {
             ),
             minecraft = MinecraftConfig(
                 version = minecraftVersion,
-                isolate = true,
+                isolate = false,
                 syncConfig = true
             )
         )

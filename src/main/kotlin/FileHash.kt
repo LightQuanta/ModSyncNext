@@ -33,9 +33,10 @@ private fun computeAllHashForFolder(path: String): Map<String, String> {
 }
 
 suspend fun syncMod(version: String) {
-    val modDir = "$baseDir/$version/mods/"
+    val minecraftPath = if (globalConfig.minecraft.isolate) "$versionDir/$version" else ".minecraft"
+    val modDir = "$minecraftPath/mods/"
     val modsHash = computeAllHashForFolder(modDir)
-    val customModsHash = computeAllHashForFolder("$baseDir/$version/custommods/")
+    val customModsHash = computeAllHashForFolder("$minecraftPath/custommods/")
 
     println(ansi().fgCyan().a("[自定义mod]").reset())
     customModsHash.printModsInfo()
@@ -99,8 +100,8 @@ suspend fun syncMod(version: String) {
     i = 1
     for (fileName in modsToCopy.values) {
         println("[$i/${modsToCopy.size}] $fileName")
-        val modPath = "$baseDir/$version/mods/$fileName"
-        val customModPath = "$baseDir/$version/custommods/$fileName"
+        val modPath = "$minecraftPath/mods/$fileName"
+        val customModPath = "$minecraftPath/custommods/$fileName"
         File(modPath).writeBytes(File(customModPath).readBytes())
         i++
     }

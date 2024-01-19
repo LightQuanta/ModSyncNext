@@ -6,7 +6,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 
-const val baseDir = ".minecraft/versions"
+const val versionDir = ".minecraft/versions"
 
 data class MinecraftVersionInfo(
     val name: String,
@@ -26,8 +26,8 @@ enum class ModLoaderType {
 }
 
 fun getVersionInfo(name: String): MinecraftVersionInfo? {
-    if (!File("$baseDir/$name/$name.json").exists()) return null
-    val versionInfo = Json.parseToJsonElement(File("$baseDir/$name/$name.json").readText())
+    if (!File("$versionDir/$name/$name.json").exists()) return null
+    val versionInfo = Json.parseToJsonElement(File("$versionDir/$name/$name.json").readText())
     val args = versionInfo.jsonObject["arguments"]?.jsonObject?.get("game")?.jsonArray ?: return null
     val strArgs = args.map { it.toString() }
 
@@ -76,7 +76,7 @@ fun getVersionInfo(name: String): MinecraftVersionInfo? {
 }
 
 fun getVersionList(): List<MinecraftVersionInfo> {
-    val versions = File(baseDir).listFiles()
+    val versions = File(versionDir).listFiles()
         ?.filter { it.isDirectory }
         ?.map { it.name }
     return versions?.mapNotNull(::getVersionInfo) ?: listOf()
