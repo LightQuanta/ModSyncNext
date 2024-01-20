@@ -16,9 +16,7 @@ private fun getSha256(path: String): String {
 }
 
 private fun Map<String, String>.printModsInfo() =
-    println(
-        this.map { (k, v) -> v.yellow() + " -> " + k.blue() }.joinToString("\n")
-            .ifEmpty { "（无）" })
+    println(this.map { (k, v) -> v.yellow() + " -> " + k.blue() }.joinToString("\n").ifEmpty { "（无）" })
 
 private fun computeAllHashForFolder(path: String): Map<String, String> {
     if (!File(path).exists()) File(path).mkdir()
@@ -64,7 +62,6 @@ suspend fun syncMod(version: String) {
 
     println()
     println("[同步开始]".cyan())
-    println()
 
     println("1. 开始删除mod".red())
     var i = 1
@@ -100,7 +97,4 @@ suspend fun syncMod(version: String) {
         File(modPath).writeBytes(File(customModPath).readBytes())
         i++
     }
-
-    println()
-    exitWithHint("同步完成！".cyan())
 }
