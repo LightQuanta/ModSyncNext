@@ -54,12 +54,13 @@ private fun Map<String, String>.printModsInfo() =
     println(this.map { (k, v) -> v.yellow() + " -> " + k.blue() }.joinToString("\n").ifEmpty { "（无）" })
 
 private fun computeAllHashForFolder(path: String): Map<String, String> {
-    if (!File(path).exists()) File(path).mkdir()
+    val pathTrimmed = path.trimEnd('/', '\\')
+    if (!File(pathTrimmed).exists()) File(pathTrimmed).mkdir()
 
-    val mods = File(path).listFiles()?.filter { it.isFile }
+    val mods = File(pathTrimmed).listFiles()?.filter { it.isFile }
 
     return mods?.associate {
-        getSha256("$path/${it.name}") to it.name
+        getSha256("$pathTrimmed/${it.name}") to it.name
     } ?: emptyMap()
 }
 
@@ -157,6 +158,7 @@ suspend fun syncMod(version: String) {
     for (fileName in modsToRemove.values) {
         println("[$i/${modsToRemove.size}] $fileName")
         File("$modDir/$fileName").delete()
+        fileHashCache.remove("$modDir/$fileName")
         i++
     }
 
@@ -183,7 +185,9 @@ suspend fun syncMod(version: String) {
         println("[$i/${modsToCopy.size}] $fileName")
         val modPath = "$minecraftPath/mods/$fileName"
         val customModPath = "$minecraftPath/custommods/$fileName"
-        File(modPath).writeBytes(File(customModPath).readBytes())
+        val newFile = File(modPath)
+        newFile.writeBytes(File(customModPath).readBytes())
+        fileHashCache[modPath] = FileInfo(newFile.length(), newFile.lastModified(), fileHashCache[customModPath]!!.hash)
         i++
     }
 
