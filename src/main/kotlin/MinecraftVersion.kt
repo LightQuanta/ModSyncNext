@@ -1,5 +1,6 @@
 package tech.lq0.modSyncNext
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -8,17 +9,20 @@ import java.io.File
 
 const val versionDir = ".minecraft/versions"
 
+@Serializable
 data class MinecraftVersionInfo(
     val name: String,
     val version: String,
     val modLoader: ModLoaderInfo,
 )
 
+@Serializable
 data class ModLoaderInfo(
     val type: ModLoaderType,
     val version: String,
 )
 
+@Serializable
 enum class ModLoaderType {
     Forge,
     Fabric,
