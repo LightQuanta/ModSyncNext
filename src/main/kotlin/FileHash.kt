@@ -43,7 +43,7 @@ suspend fun syncMod(version: String) {
     val customModsHash = computeAllHashForFolder("$minecraftPath/custommods/")
     customModsHash.printModsInfo()
 
-    val server = globalConfig.sync.server
+    val server = globalConfig.sync.server.trim('/')
 
     println(ansi().fgCyan().a("正在获取mod列表...").reset())
     val result = "$server/filelist-$version.csv".httpGet().awaitStringResponseResult().third

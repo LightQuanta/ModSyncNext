@@ -68,7 +68,7 @@ data class ConfigLegacy(
     val autoUpdate: Boolean
 )
 
-fun requireString(message: String, condition: ((String) -> Boolean)?): String {
+fun requireString(message: String, condition: ((String) -> Boolean)? = null): String {
     while (true) {
         print(message)
         val temp = readln()
@@ -79,11 +79,9 @@ fun requireString(message: String, condition: ((String) -> Boolean)?): String {
 private fun getConfig(): Config {
     if (File("msnconfig.txt").exists()) return Toml.decodeFromString(File("msnconfig.txt").readText())
 
-    var syncServer: String =
+    val syncServer: String =
         requireString("请输入同步服务器（不是Minecraft版本）：") { it.startsWith("http://") || it.startsWith("https://") }
-    if (!syncServer.endsWith("/")) syncServer += "/"
-
-    val minecraftVersion = requireString("请输入要同步的Minecraft版本：") { it.isNotBlank() }
+            .trim('/')
 
     if (File("mcsyncconfig-1.0.json").exists()) {
         val oldConfig: ConfigLegacy = Json.decodeFromString(File("mcsyncconfig-1.0.json").readText())
@@ -102,7 +100,7 @@ private fun getConfig(): Config {
                 autoUpdate = oldConfig.autoUpdate
             ),
             minecraft = MinecraftConfig(
-                version = minecraftVersion,
+                version = oldConfig.serverName,
                 isolate = false,
                 syncConfig = true
             )
@@ -111,6 +109,8 @@ private fun getConfig(): Config {
         println(ansi().fgGreen().a("已迁移旧版配置文件！").reset())
         return newConfig
     }
+
+    val minecraftVersion = requireString("请输入要同步的Minecraft版本：") { it.isNotBlank() }
 
     val defaultConfig = Config(
         version = "2.0",
