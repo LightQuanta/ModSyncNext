@@ -19,6 +19,7 @@ private val server = globalConfig.sync.server.trim('/')
 @Serializable
 private data class FileInfo(
     val size: Long,
+    val lastModified: Long,
     val hash: String,
 )
 
@@ -28,12 +29,13 @@ private fun getSha256(path: String): String {
     val file = File(path)
     if (fileHashCache.containsKey(path)) {
         val info = fileHashCache[path]!!
-        if (info.size == file.length()) return info.hash
+        if (info.size == file.length() && file.lastModified() == info.lastModified) return info.hash
         fileHashCache.remove(path)
     }
     val md = MessageDigest.getInstance("SHA-256")
     val hash = md.digest(file.readBytes()).joinToString("") { "%02X".format(it) }
-    val info = FileInfo(file.length(), hash)
+    val info = FileInfo(file.length(), file.lastModified(), hash)
+
     fileHashCache[path] = info
     return hash
 }
@@ -43,8 +45,7 @@ fun readFileHashCache() {
     if (!File("./MSN/hash.json").exists()) return
 
     val file = File("./MSN/hash.json")
-    val map = Json.decodeFromString<Map<String, FileInfo>>(file.readText())
-    map.forEach { (k, v) -> fileHashCache[k] = v }
+    fileHashCache.putAll(Json.decodeFromString<Map<String, FileInfo>>(file.readText()))
 }
 
 fun writeFileHashCache() = File("./MSN/hash.json").writeText(Json.encodeToString(fileHashCache))
@@ -126,7 +127,7 @@ suspend fun syncMod(version: String) {
     val modsHash = computeAllHashForFolder(modDir)
 
     println("正在校验自定义mod...".cyan())
-    val customModsHash = computeAllHashForFolder("$minecraftPath/custommods/")
+    val customModsHash = computeAllHashForFolder("$minecraftPath/custommods")
     customModsHash.printModsInfo()
 
     println("正在获取mod列表...".cyan())
@@ -137,8 +138,6 @@ suspend fun syncMod(version: String) {
         { error -> exitWithHint("获取mod列表出错：$error".red()) }
     )
     val serverModsHash = csv.split("\n").map { it.split(",").reversed() }.associate { it[0] to it[1] }
-
-    writeFileHashCache()
 
     val modsToAdd = serverModsHash - modsHash.keys - customModsHash.keys
     val modsToRemove = modsHash - serverModsHash.keys - customModsHash.keys
@@ -187,4 +186,6 @@ suspend fun syncMod(version: String) {
         File(modPath).writeBytes(File(customModPath).readBytes())
         i++
     }
+
+    writeFileHashCache()
 }
