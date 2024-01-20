@@ -73,8 +73,16 @@ suspend fun syncMod(version: String) {
     println(ansi().fgCyan().a("[同步开始]").reset())
     println()
 
-    println(ansi().fgGreen().a("1. 开始下载mod").reset())
+    println(ansi().fgRed().a("1. 开始删除mod").reset())
     var i = 1
+    for (fileName in modsToRemove.values) {
+        println("[$i/${modsToRemove.size}] $fileName")
+        File("$modDir/$fileName").delete()
+        i++
+    }
+
+    println(ansi().fgGreen().a("2. 开始下载mod").reset())
+    i = 1
     for (fileName in modsToAdd.values) {
         println("[$i/${modsToAdd.size}] $fileName")
         val path = "$modDir/$fileName"
@@ -95,14 +103,6 @@ suspend fun syncMod(version: String) {
         i++
     }
 
-    println(ansi().fgRed().a("2. 开始删除mod").reset())
-    i = 1
-    for (fileName in modsToRemove.values) {
-        println("[$i/${modsToRemove.size}] $fileName")
-        File("$modDir/$fileName").delete()
-        i++
-    }
-
     println(ansi().fgYellow().a("3. 开始复制本地mod").reset())
     i = 1
     for (fileName in modsToCopy.values) {
@@ -113,7 +113,9 @@ suspend fun syncMod(version: String) {
         i++
     }
 
+    println()
     println(ansi().fgCyan().a("同步完成！").reset())
+    println()
     println("按回车退出")
     readln()
     exitProcess(0)
