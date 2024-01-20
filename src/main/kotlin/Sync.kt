@@ -5,6 +5,8 @@ import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.github.kittinunf.fuel.httpGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.File
@@ -14,11 +16,38 @@ import java.security.MessageDigest
 
 private val server = globalConfig.sync.server.trim('/')
 
+@Serializable
+private data class FileInfo(
+    val size: Long,
+    val hash: String,
+)
+
+private val fileHashCache = mutableMapOf<String, FileInfo>()
+
 private fun getSha256(path: String): String {
+    val file = File(path)
+    if (fileHashCache.containsKey(path)) {
+        val info = fileHashCache[path]!!
+        if (info.size == file.length()) return info.hash
+        fileHashCache.remove(path)
+    }
     val md = MessageDigest.getInstance("SHA-256")
-    val digest = md.digest(File(path).readBytes())
-    return digest.joinToString("") { "%02X".format(it) }
+    val hash = md.digest(file.readBytes()).joinToString("") { "%02X".format(it) }
+    val info = FileInfo(file.length(), hash)
+    fileHashCache[path] = info
+    return hash
 }
+
+fun readFileHashCache() {
+    if (!File("./MSN").exists()) File("./MSN").mkdir()
+    if (!File("./MSN/hash.json").exists()) return
+
+    val file = File("./MSN/hash.json")
+    val map = Json.decodeFromString<Map<String, FileInfo>>(file.readText())
+    map.forEach { (k, v) -> fileHashCache[k] = v }
+}
+
+fun writeFileHashCache() = File("./MSN/hash.json").writeText(Json.encodeToString(fileHashCache))
 
 private fun Map<String, String>.printModsInfo() =
     println(this.map { (k, v) -> v.yellow() + " -> " + k.blue() }.joinToString("\n").ifEmpty { "（无）" })
@@ -29,7 +58,7 @@ private fun computeAllHashForFolder(path: String): Map<String, String> {
     val mods = File(path).listFiles()?.filter { it.isFile }
 
     return mods?.associate {
-        getSha256(it.absolutePath) to it.name
+        getSha256("$path/${it.name}") to it.name
     } ?: emptyMap()
 }
 
@@ -88,9 +117,10 @@ suspend fun ensureVersionExist(version: String) {
 
 suspend fun syncMod(version: String) {
     ensureVersionExist(version)
+    readFileHashCache()
 
     val minecraftPath = if (globalConfig.minecraft.isolate) "$versionDir/$version" else ".minecraft"
-    val modDir = "$minecraftPath/mods/"
+    val modDir = "$minecraftPath/mods"
 
     println("正在校验本地mod...".cyan())
     val modsHash = computeAllHashForFolder(modDir)
@@ -107,6 +137,8 @@ suspend fun syncMod(version: String) {
         { error -> exitWithHint("获取mod列表出错：$error".red()) }
     )
     val serverModsHash = csv.split("\n").map { it.split(",").reversed() }.associate { it[0] to it[1] }
+
+    writeFileHashCache()
 
     val modsToAdd = serverModsHash - modsHash.keys - customModsHash.keys
     val modsToRemove = modsHash - serverModsHash.keys - customModsHash.keys

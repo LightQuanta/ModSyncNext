@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "tech.lq0.modSyncNext"
-version = "1.0-SNAPSHOT"
+version = "0.1"
 
 tasks.jar {
     manifest {
