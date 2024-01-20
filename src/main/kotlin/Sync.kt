@@ -41,7 +41,12 @@ suspend fun ensureVersionExist(version: String) {
 
     val cmclFile = File("cmcl.exe")
     if (!cmclFile.exists() || !cmclFile.isFile) {
-        exitWithHint("未发现cmcl.exe，请在目录下放置cmcl.exe再开始进行自动安装".red())
+        exitWithHint(
+            """
+            未发现cmcl.exe，请在目录下放置cmcl.exe再开始进行自动安装
+            可在 https://gitee.com/MrShiehX/console-minecraft-launcher/releases 下载
+            """.trimIndent().red()
+        )
     }
 
     val result = "$server/version-$version.json".httpGet().awaitStringResponseResult().third
