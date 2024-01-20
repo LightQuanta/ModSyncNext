@@ -5,11 +5,9 @@ import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.github.kittinunf.fuel.httpGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.fusesource.jansi.Ansi.ansi
 import java.io.File
 import java.net.URLEncoder
 import java.security.MessageDigest
-import kotlin.system.exitProcess
 
 private fun getSha256(path: String): String {
     val md = MessageDigest.getInstance("SHA-256")
@@ -19,7 +17,7 @@ private fun getSha256(path: String): String {
 
 private fun Map<String, String>.printModsInfo() =
     println(
-        this.map { (k, v) -> ansi().fgYellow().a(v).reset().a(" -> ").fgBlue().a(k).reset() }.joinToString("\n")
+        this.map { (k, v) -> v.yellow() + " -> " + k.blue() }.joinToString("\n")
             .ifEmpty { "（无）" })
 
 private fun computeAllHashForFolder(path: String): Map<String, String> {
@@ -36,26 +34,21 @@ suspend fun syncMod(version: String) {
     val minecraftPath = if (globalConfig.minecraft.isolate) "$versionDir/$version" else ".minecraft"
     val modDir = "$minecraftPath/mods/"
 
-    println(ansi().fgCyan().a("正在校验本地mod...").reset())
+    println("正在校验本地mod...".cyan())
     val modsHash = computeAllHashForFolder(modDir)
 
-    println(ansi().fgCyan().a("正在校验自定义mod...").reset())
+    println("正在校验自定义mod...".cyan())
     val customModsHash = computeAllHashForFolder("$minecraftPath/custommods/")
     customModsHash.printModsInfo()
 
     val server = globalConfig.sync.server.trim('/')
 
-    println(ansi().fgCyan().a("正在获取mod列表...").reset())
+    println("正在获取mod列表...".cyan())
     val result = "$server/filelist-$version.csv".httpGet().awaitStringResponseResult().third
 
     val csv = result.fold(
         { data -> data },
-        { error ->
-            println(ansi().fgRed().a("获取mod列表出错：$error").reset())
-            println("按回车退出")
-            readln()
-            exitProcess(0)
-        }
+        { error -> exitWithHint("获取mod列表出错：$error".red()) }
     )
     val serverModsHash = csv.split("\n").map { it.split(",").reversed() }.associate { it[0] to it[1] }
 
@@ -63,17 +56,17 @@ suspend fun syncMod(version: String) {
     val modsToRemove = modsHash - serverModsHash.keys - customModsHash.keys
     val modsToCopy = customModsHash - modsHash.keys
 
-    println(ansi().fgCyan().a("[要下载的mod列表]").reset())
+    println("[要下载的mod列表]".cyan())
     modsToAdd.printModsInfo()
 
-    println(ansi().fgRed().a("[要删除的mod列表]").reset())
+    println("[要删除的mod列表]".red())
     modsToRemove.printModsInfo()
 
     println()
-    println(ansi().fgCyan().a("[同步开始]").reset())
+    println("[同步开始]".cyan())
     println()
 
-    println(ansi().fgRed().a("1. 开始删除mod").reset())
+    println("1. 开始删除mod".red())
     var i = 1
     for (fileName in modsToRemove.values) {
         println("[$i/${modsToRemove.size}] $fileName")
@@ -81,7 +74,7 @@ suspend fun syncMod(version: String) {
         i++
     }
 
-    println(ansi().fgGreen().a("2. 开始下载mod").reset())
+    println("2. 开始下载mod".green())
     i = 1
     for (fileName in modsToAdd.values) {
         println("[$i/${modsToAdd.size}] $fileName")
@@ -92,18 +85,13 @@ suspend fun syncMod(version: String) {
             }
         }".httpGet().awaitByteArrayResponseResult().third.fold(
             { data -> data },
-            { error ->
-                println(ansi().fgRed().a("下载mod出错：$error").reset())
-                println("按回车退出")
-                readln()
-                exitProcess(0)
-            }
+            { error -> exitWithHint("下载mod出错：$error".red()) }
         )
         File(path).writeBytes(data)
         i++
     }
 
-    println(ansi().fgYellow().a("3. 开始复制本地mod").reset())
+    println("3. 开始复制本地mod".yellow())
     i = 1
     for (fileName in modsToCopy.values) {
         println("[$i/${modsToCopy.size}] $fileName")
@@ -114,9 +102,5 @@ suspend fun syncMod(version: String) {
     }
 
     println()
-    println(ansi().fgCyan().a("同步完成！").reset())
-    println()
-    println("按回车退出")
-    readln()
-    exitProcess(0)
+    exitWithHint("同步完成！".cyan())
 }
