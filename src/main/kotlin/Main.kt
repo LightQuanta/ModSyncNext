@@ -47,7 +47,7 @@ fun main() = runBlocking {
                 3. 退出程序
                 """.trimIndent().green()
             )
-            val operation = requireStringOrDefault("请选择你的操作：", "1") { (it.toIntOrNull() ?: false) in 1..3 }.toInt()
+            val operation = requireStringOrDefault("请选择你的操作（默认为1）：", "1") { (it.toIntOrNull() ?: false) in 1..3 }.toInt()
             when (operation) {
                 1 -> sync()
                 2 -> println("该功能暂未实现！\n".red())    // TODO 配置文件修改
@@ -82,16 +82,15 @@ suspend fun sync() {
 
     if (globalConfig.sync.actionAfterSync == ActionAfterSync.ExecuteCommand || globalConfig.sync.actionAfterSync == ActionAfterSync.ExecuteCommandAndExit) {
         println("开始执行外部程序".cyan())
-        println()
 
         val command = globalConfig.sync.command
         try {
             withContext(Dispatchers.IO) {
                 Runtime.getRuntime().exec(command)
             }
-            println("执行成功".green())
+            println("执行成功！\n".green())
         } catch (e: Exception) {
-            println("执行失败，请检查你的配置文件\n$e".red())
+            println("执行失败，请检查你的配置文件\n$e\n".red())
         }
         if (globalConfig.sync.actionAfterSync == ActionAfterSync.ExecuteCommandAndExit) {
             println("程序将在5s后自动退出".yellow())
