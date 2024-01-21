@@ -32,10 +32,10 @@ fun exitWithHint(text: String): Nothing {
 
 fun requireBooleanOrDefault(message: String, default: Boolean): Boolean {
     while (true) {
-        print("$message\n> \u001B[s")
+        print("$message\n> ")
         val temp = readln()
         if (temp.isEmpty()) {
-            print("\u001B[1A\u001B[u" + default.toString().brightBlack() + "\n")
+            print("> \u001B[1A" + default.toString().brightBlack() + "\n")
             return default
         }
         when (temp.lowercase()) {
@@ -47,10 +47,10 @@ fun requireBooleanOrDefault(message: String, default: Boolean): Boolean {
 
 fun requireStringOrDefault(message: String, default: String, condition: (String) -> Boolean = { true }): String {
     while (true) {
-        print("$message\n> \u001B[s")
+        print("$message\n> ")
         val temp = readln()
         if (temp.isBlank()) {
-            print("\u001B[1A\u001B[u" + default.brightBlack() + "\n")
+            print("> \u001B[1A" + default.brightBlack() + "\n")
             return default
         }
         if (condition(temp)) return temp
