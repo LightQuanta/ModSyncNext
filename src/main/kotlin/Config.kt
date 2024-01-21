@@ -67,14 +67,6 @@ data class ConfigLegacy(
     val autoUpdate: Boolean
 )
 
-fun requireString(message: String, condition: ((String) -> Boolean)? = null): String {
-    while (true) {
-        print(message)
-        val temp = readln()
-        if (temp.isNotBlank() && condition?.invoke(temp) != false) return temp
-    }
-}
-
 private fun getConfig(): Config {
     if (File("msnconfig.txt").exists()) return Toml.decodeFromString(File("msnconfig.txt").readText())
 
@@ -109,7 +101,7 @@ private fun getConfig(): Config {
         return newConfig
     }
 
-    val minecraftVersion = requireString("请输入要同步的Minecraft版本：") { it.isNotBlank() }
+    val minecraftVersion = requireString("请输入要同步的Minecraft版本：")
 
     val defaultConfig = Config(
         version = "2.0",

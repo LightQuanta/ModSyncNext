@@ -29,3 +29,19 @@ fun exitWithHint(text: String): Nothing {
     readln()
     exitProcess(0)
 }
+
+fun requireStringOrDefault(message: String, default: String, condition: (String) -> Boolean = { true }): String {
+    while (true) {
+        print(message)
+        val temp = readln()
+        return if (condition(temp)) temp else default
+    }
+}
+
+fun requireString(message: String, condition: (String) -> Boolean = { true }): String {
+    while (true) {
+        print(message)
+        val temp = readln()
+        if (temp.isNotBlank() && condition(temp)) return temp
+    }
+}
