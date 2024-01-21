@@ -34,7 +34,8 @@ fun requireStringOrDefault(message: String, default: String, condition: (String)
     while (true) {
         print(message)
         val temp = readln()
-        return if (condition(temp)) temp else default
+        if (temp.isBlank()) return default
+        if (condition(temp)) return temp
     }
 }
 

@@ -144,14 +144,15 @@ suspend fun syncMod(version: String) {
     val modsToRemove = modsHash - serverModsHash.keys - customModsHash.keys
     val modsToCopy = customModsHash - modsHash.keys
 
-    println("[要下载的mod列表]".cyan())
-    modsToAdd.printModsInfo()
-
     println("[要删除的mod列表]".red())
     modsToRemove.printModsInfo()
 
+    println("[要下载的mod列表]".green())
+    modsToAdd.printModsInfo()
+
+
     println()
-    println("[同步开始]".cyan())
+    println(">>> 同步开始".cyan())
 
     println("1. 开始删除mod".red())
     var i = 1
