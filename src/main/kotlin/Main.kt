@@ -18,6 +18,7 @@ fun main() = runBlocking {
     }
 
     var updateChecked = false
+    var synced = false
 
     while (true) {
         println("ModSyncNext".cyan() + " by ".brightBlack() + "Light_Quanta".cyan())
@@ -35,7 +36,7 @@ fun main() = runBlocking {
         }
 
         // 自动同步
-        if (globalConfig.sync.autoSync) {
+        if (globalConfig.sync.autoSync && !synced) {
             sync()
         } else {
             println(
@@ -49,10 +50,10 @@ fun main() = runBlocking {
                 """.trimIndent().green()
             )
             val operation =
-                requireStringOrDefault("请选择你的操作（默认为1）：", "1") { (it.toIntOrNull() ?: false) in 1..3 }.toInt()
+                requireStringOrDefault("请选择你的操作（默认为1）", "1") { (it.toIntOrNull() ?: false) in 1..3 }.toInt()
             when (operation) {
                 1 -> sync()
-                2 -> println("该功能暂未实现！\n".red())    // TODO 配置文件修改
+                2 -> interactiveSetConfig()
                 3 -> {
                     println("程序将在5s后自动退出".yellow())
                     delay(5.seconds)
@@ -61,6 +62,7 @@ fun main() = runBlocking {
                 }
             }
         }
+        synced = true
     }
 }
 

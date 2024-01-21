@@ -14,14 +14,14 @@ val globalConfig: Config by lazy { getConfig() }
 data class Config(
     @TomlComment("配置文件版本，勿动")
     val version: String,
-    val sync: SyncConfig,
-    val minecraft: MinecraftConfig,
+    var sync: SyncConfig,
+    var minecraft: MinecraftConfig,
 )
 
 @Serializable
 data class SyncConfig(
     @TomlComment("同步服务器")
-    val server: String,
+    var server: String,
     @TomlComment("是否自动更新同步程序")
     val autoUpdate: Boolean = false,
     @TomlComment("是否在程序启动后自动开始同步")
@@ -67,11 +67,76 @@ data class ConfigLegacy(
     val autoUpdate: Boolean
 )
 
+fun interactiveSetConfig() {
+    println("\n开始设置配置文件，请输入新配置，不输入内容则表示不更改配置".cyan())
+    val server = requireStringOrDefault(
+        "请输入同步服务器（当前为${globalConfig.sync.server.yellow()}）",
+        globalConfig.sync.server
+    ) { it.startsWith("http://") || it.startsWith("https://") }
+
+    val autoUpdate = requireBooleanOrDefault(
+        "是否自动更新同步程序（当前为${globalConfig.sync.autoUpdate.toString().yellow()}）",
+        globalConfig.sync.autoUpdate
+    )
+    val autoSync = requireBooleanOrDefault(
+        "是否在程序启动后自动开始同步（当前为${globalConfig.sync.autoSync.toString().yellow()}）",
+        globalConfig.sync.autoSync
+    )
+
+    val actionAfterSync = ActionAfterSync.valueOf(
+        requireStringOrDefault(
+            """
+            同步完成后的行为（当前为${globalConfig.sync.actionAfterSync.name.yellow()}）
+            可选项为：${ActionAfterSync.entries.joinToString { it.name.brightBlack() }}
+            """.trimIndent(),
+            globalConfig.sync.actionAfterSync.name
+        ) {
+            it in ActionAfterSync.entries.map { e -> e.name }
+        }
+    )
+
+    val command = requireStringOrDefault(
+        "同步后要执行的命令（当前为${globalConfig.sync.command.yellow()}）",
+        globalConfig.sync.command
+    )
+
+    val version = requireStringOrDefault(
+        "请输入要同步的Minecraft版本（当前为${globalConfig.minecraft.version.yellow()}）",
+        globalConfig.minecraft.version
+    )
+
+    val isolate = requireBooleanOrDefault(
+        "是否开启版本隔离（当前为${globalConfig.minecraft.isolate.toString().yellow()}）",
+        globalConfig.minecraft.isolate
+    )
+
+    val syncConfig = requireBooleanOrDefault(
+        "是否同步配置文件（当前为${globalConfig.minecraft.syncConfig.toString().yellow()}）",
+        globalConfig.minecraft.syncConfig
+    )
+
+    globalConfig.sync = SyncConfig(
+        server = server,
+        autoSync = autoSync,
+        actionAfterSync = actionAfterSync,
+        command = command,
+        autoUpdate = autoUpdate
+    )
+    globalConfig.minecraft = MinecraftConfig(
+        version = version,
+        isolate = isolate,
+        syncConfig = syncConfig
+    )
+
+    File("msnconfig.txt").writeText(Toml.encodeToString(globalConfig))
+    println("已保存配置文件！\n".green())
+}
+
 private fun getConfig(): Config {
     if (File("msnconfig.txt").exists()) return Toml.decodeFromString(File("msnconfig.txt").readText())
 
     val syncServer: String =
-        requireString("请输入同步服务器（不是Minecraft版本）：") { it.startsWith("http://") || it.startsWith("https://") }
+        requireString("请输入同步服务器（不是Minecraft版本）") { it.startsWith("http://") || it.startsWith("https://") }
             .trim('/')
 
     if (File("mcsyncconfig-1.0.json").exists()) {
@@ -101,7 +166,7 @@ private fun getConfig(): Config {
         return newConfig
     }
 
-    val minecraftVersion = requireString("请输入要同步的Minecraft版本：")
+    val minecraftVersion = requireString("请输入要同步的Minecraft版本")
 
     val defaultConfig = Config(
         version = "2.0",
