@@ -118,7 +118,7 @@ suspend fun ensureVersionExist(version: String) {
 }
 
 suspend fun syncMod(version: String) {
-    ensureVersionExist(version)
+    if (globalConfig.minecraft.isolate) ensureVersionExist(version)
     readFileHashCache()
 
     val minecraftPath = if (globalConfig.minecraft.isolate) "$versionDir/$version" else ".minecraft"
