@@ -165,7 +165,6 @@ suspend fun syncMod(version: String) {
     println("[要下载的mod列表]".green())
     modsToAdd.printModsInfo()
 
-
     println()
     println(">>> 同步开始".cyan())
 
@@ -180,7 +179,7 @@ suspend fun syncMod(version: String) {
 
     println("2. 开始下载mod".green())
     i = 1
-    for (fileName in modsToAdd.values) {
+    for ((hash, fileName) in modsToAdd) {
         println("[$i/${modsToAdd.size}] $fileName")
         val path = "$modDir/$fileName"
         val data = "$server/$version/${
@@ -191,7 +190,9 @@ suspend fun syncMod(version: String) {
             { data -> data },
             { error -> exitWithHint("下载mod出错：$error".red()) }
         )
-        File(path).writeBytes(data)
+        val newFile = File(path)
+        newFile.writeBytes(data)
+        fileHashCache[path] = FileInfo(newFile.length(), newFile.lastModified(), hash)
         i++
     }
 
