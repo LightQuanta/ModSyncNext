@@ -4,18 +4,21 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.file.Files
-import java.nio.file.Path
+import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-fun copyFolder(source: Path, destination: Path) {
-    Files.createDirectories(destination)
+fun copyFolder(source: String, destination: String) {
+    val sourceDir = Paths.get(source)
+    val destinationDir = Paths.get(destination)
 
-    Files.walk(source).use { stream ->
+    Files.createDirectories(destinationDir)
+
+    Files.walk(sourceDir).use { stream ->
         stream.forEach { sourcePath ->
-            val relativePath = source.relativize(sourcePath)
-            val destinationPath = destination.resolve(relativePath)
+            val relativePath = sourceDir.relativize(sourcePath)
+            val destinationPath = destinationDir.resolve(relativePath)
 
             if (Files.isDirectory(sourcePath)) {
                 Files.createDirectories(destinationPath)

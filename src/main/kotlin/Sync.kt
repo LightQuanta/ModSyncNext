@@ -12,7 +12,6 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.net.URLEncoder
-import java.nio.file.Paths
 import java.security.MessageDigest
 
 private val server = globalConfig.sync.server.trim('/')
@@ -132,41 +131,38 @@ fun generateSyncInfo() {
     val versionInfo = getVersionInfo(version)
 
     val syncDir = File("./MSN/sync/$version")
-    if (syncDir.exists() && syncDir.isDirectory) {
-        println("正在复制mods".yellow())
-        val source = Paths.get("./.minecraft/versions/$version/mods")
-        val destination = Paths.get("./MSN/sync/$version/mods")
+    syncDir.deleteRecursively()
+    syncDir.mkdirs()
+    File("./MSN/output/$version").mkdirs()
 
-        File("./MSN/sync/$version/mods").deleteRecursively()
-        copyFolder(source, destination)
-    } else {
-        syncDir.mkdirs()
-        val source = Paths.get("./.minecraft/versions/$version")
-        val destination = Paths.get("./MSN/sync/$version")
+    copyFolder("./.minecraft/versions/$version", "./MSN/sync/$version")
 
-        copyFolder(source, destination)
+    File("./MSN/sync/$version/mods").deleteRecursively()
+    File("./MSN/sync/$version/custommods").deleteRecursively()
+    File("./MSN/sync/$version/logs").deleteRecursively()
+    File("./MSN/sync/$version/$version-natives").deleteRecursively()
+    File("./MSN/sync/$version/$version.jar").delete()
+    File("./MSN/sync/$version/$version.json").delete()
 
-        File("./MSN/sync/$version/custommods").deleteRecursively()
-        File("./MSN/sync/$version/logs").deleteRecursively()
-        File("./MSN/sync/$version/$version-natives").deleteRecursively()
-        File("./MSN/sync/$version/$version.jar").delete()
-        File("./MSN/sync/$version/$version.json").delete()
-
-        File("./MSN/sync/$version").listFiles()?.forEach {
-            val files = it.listFiles()
-            if (it.isDirectory && (files == null || files.isEmpty())) {
-                it.delete()
-            }
+    File("./MSN/sync/$version").listFiles()?.forEach {
+        val files = it.listFiles()
+        if (it.isDirectory && (files == null || files.isEmpty())) {
+            it.delete()
         }
-
-        println("请在 MSN/sync/$version 文件夹里删除不需要同步的配置文件，然后按回车继续".yellow())
-        readln()
     }
 
+    println("请在 MSN/sync/$version 文件夹里删除不需要同步的配置文件，然后按回车继续".yellow())
+    readln()
+
     println("正在生成同步文件...".yellow())
-    File("./MSN/sync/$version/version-info.json").writeText(Json.encodeToString(versionInfo))
-    zipFolder(File("./MSN/sync/$version"), File("./MSN/version-$version.zip"))
-    println("生成同步文件成功！".green())
+    copyFolder("./MSN/sync/$version", "./MSN/output/$version/config")
+    copyFolder("./.minecraft/versions/$version/mods", "./MSN/output/$version/mods")
+    File("./MSN/output/$version/version-info.json").writeText(Json.encodeToString(versionInfo))
+
+    zipFolder(File("./MSN/output/$version"), File("./MSN/output/sync-$version.zip"))
+    File("./MSN/output/$version").deleteRecursively()
+
+    println("生成同步文件成功！请查看 MSN/output/sync-$4version.zip\n".green())
 }
 
 
