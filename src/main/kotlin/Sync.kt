@@ -95,8 +95,12 @@ suspend fun ensureVersionExist(version: String) {
     }
 
     withContext(Dispatchers.IO) {
-        Runtime.getRuntime().exec("./cmcl.exe config downloadSource 2").waitFor()
-        Runtime.getRuntime().exec("./cmcl.exe version --isolate").waitFor()
+        // 仅在cmcl配置文件不存在的情况下初始化
+        if (!File("./cmcl.json").exists()) {
+            Runtime.getRuntime().exec("./cmcl.exe config downloadSource 2").waitFor()
+            Runtime.getRuntime().exec("./cmcl.exe version --isolate").waitFor()
+        }
+
         val process =
             Runtime.getRuntime().exec("./cmcl.exe install $minecraftVersion -n \"$version\" $modLoaderInstallArg")
         val reader = BufferedReader(InputStreamReader(process.inputStream, "GB2312"))
