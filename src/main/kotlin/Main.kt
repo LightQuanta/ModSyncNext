@@ -44,17 +44,21 @@ fun main() = runBlocking {
                 [菜单]
                 
                 1. 开始自动同步
-                2. 修改配置文件
-                3. 退出程序
+                2. 修改要同步的Minecraft版本
+                3. 修改配置文件
+                4. 生成同步文件
+                5. 退出程序
                 
                 """.trimIndent().green()
             )
             val operation =
-                requireStringOrDefault("请选择你的操作（默认为1）", "1") { (it.toIntOrNull() ?: false) in 1..3 }.toInt()
+                requireStringOrDefault("请选择你的操作（默认为1）", "1") { (it.toIntOrNull() ?: false) in 1..5 }.toInt()
             when (operation) {
                 1 -> sync()
-                2 -> interactiveSetConfig()
-                3 -> {
+                2 -> interactiveSetSyncVersion()
+                3 -> interactiveSetConfig()
+                4 -> generateSyncInfo()
+                5 -> {
                     println("程序将在5s后自动退出".yellow())
                     delay(5.seconds)
                     AnsiConsole.systemUninstall()

@@ -23,9 +23,9 @@ data class SyncConfig(
     @TomlComment("同步服务器")
     var server: String,
     @TomlComment("是否自动更新同步程序")
-    val autoUpdate: Boolean = false,
+    var autoUpdate: Boolean = false,
     @TomlComment("是否在程序启动后自动开始同步")
-    val autoSync: Boolean = false,
+    var autoSync: Boolean = false,
     @TomlComment(
         """
         同步完成后的行为，可用的值为：
@@ -35,9 +35,9 @@ data class SyncConfig(
         ExecuteCommandAndExit：同步后执行命令并退出
         """
     )
-    val actionAfterSync: ActionAfterSync = ActionAfterSync.DoNothing,
+    var actionAfterSync: ActionAfterSync = ActionAfterSync.DoNothing,
     @TomlComment("若行为为执行命令，则执行下述命令")
-    val command: String = "",
+    var command: String = "",
 )
 
 enum class ActionAfterSync {
@@ -50,11 +50,11 @@ enum class ActionAfterSync {
 @Serializable
 data class MinecraftConfig(
     @TomlComment("要同步的Minecraft版本")
-    val version: String,
+    var version: String,
     @TomlComment("是否开启版本隔离")
-    val isolate: Boolean = true,
+    var isolate: Boolean = true,
     @TomlComment("是否同步配置文件（仅在配置文件不存在时同步）")
-    val syncConfig: Boolean = true,
+    var syncConfig: Boolean = true,
 )
 
 @Serializable
@@ -66,6 +66,17 @@ data class ConfigLegacy(
     val command: String,
     val autoUpdate: Boolean
 )
+
+fun interactiveSetSyncVersion() {
+    val version = requireStringOrDefault(
+        "请输入要同步的Minecraft版本（当前为${globalConfig.minecraft.version.yellow()}）",
+        globalConfig.minecraft.version
+    )
+    globalConfig.minecraft.version = version
+
+    File("msnconfig.txt").writeText(Toml.encodeToString(globalConfig))
+    println("修改成功！\n".green())
+}
 
 fun interactiveSetConfig() {
     println("\n开始设置配置文件，请输入新配置，不输入内容则表示不更改配置".cyan())
