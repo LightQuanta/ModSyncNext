@@ -7,6 +7,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 fun copyFolder(source: String, destination: String) {
@@ -38,6 +39,37 @@ fun zipFolder(sourceFolder: File, zipFile: File) {
     } finally {
         zos.close()
         fos.close()
+    }
+}
+
+fun unzip(zipFile: File, destinationFolder: File) {
+    val fis = FileInputStream(zipFile)
+    val zis = ZipInputStream(fis)
+
+    try {
+        var entry: ZipEntry? = zis.nextEntry
+        while (entry != null) {
+            val entryFile = File(destinationFolder, entry.name)
+
+            if (entry.isDirectory) {
+                entryFile.mkdirs()
+            } else {
+                entryFile.parentFile.mkdirs()
+                FileOutputStream(entryFile).use { fos ->
+                    val buffer = ByteArray(1024)
+                    var len: Int
+                    while (zis.read(buffer).also { len = it } > 0) {
+                        fos.write(buffer, 0, len)
+                    }
+                }
+            }
+
+            zis.closeEntry()
+            entry = zis.nextEntry
+        }
+    } finally {
+        zis.close()
+        fis.close()
     }
 }
 

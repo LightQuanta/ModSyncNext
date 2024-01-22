@@ -53,7 +53,7 @@ fun writeFileHashCache() = File("./MSN/hash.json").writeText(Json.encodeToString
 private fun Map<String, String>.printModsInfo() =
     println(this.map { (k, v) -> v.yellow() + " -> " + k.blue() }.joinToString("\n").ifEmpty { "（无）" })
 
-private fun computeAllHashForFolder(path: String): Map<String, String> {
+fun computeAllHashForFolder(path: String): Map<String, String> {
     val pathTrimmed = path.trimEnd('/', '\\')
     if (!File(pathTrimmed).exists()) File(pathTrimmed).mkdir()
 
@@ -119,6 +119,19 @@ suspend fun ensureVersionExist(version: String) {
             exitWithHint("安装失败，请重试或检查配置文件".red())
         }
     }
+
+    if (globalConfig.minecraft.syncConfig) {
+        val configFile = File("./.minecraft/versions/$version/config-$version.zip")
+        if (configFile.exists()) return
+        println("正在下载配置文件".cyan())
+        val configFileData = "$server/config-$version.zip".httpGet().awaitByteArrayResponseResult().third.fold(
+            { data -> data },
+            { error -> exitWithHint("下载配置文件 $version 出错 ：$error".red()) }
+        )
+
+        File("./.minecraft/versions/$version/config-$version.zip").writeBytes(configFileData)
+        unzip(configFile, File("./.minecraft/versions/$version"))
+    }
 }
 
 fun generateSyncInfo() {
@@ -155,14 +168,14 @@ fun generateSyncInfo() {
     readln()
 
     println("正在生成同步文件...".yellow())
-    copyFolder("./MSN/sync/$version", "./MSN/output/$version/config")
+    zipFolder(File("./MSN/sync/$version"), File("./MSN/output/$version/config.zip"))
     copyFolder("./.minecraft/versions/$version/mods", "./MSN/output/$version/mods")
     File("./MSN/output/$version/version-info.json").writeText(Json.encodeToString(versionInfo))
 
     zipFolder(File("./MSN/output/$version"), File("./MSN/output/sync-$version.zip"))
     File("./MSN/output/$version").deleteRecursively()
 
-    println("生成同步文件成功！请查看 MSN/output/sync-$4version.zip\n".green())
+    println("生成同步文件成功！请查看 MSN/output/sync-$version.zip\n".green())
 }
 
 
