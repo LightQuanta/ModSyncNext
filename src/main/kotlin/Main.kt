@@ -9,10 +9,21 @@ import java.io.File
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
-val version = globalConfig.minecraft.version
+val version: String
+    get() = globalConfig.minecraft.version
 
 fun main(args: Array<String>) = runBlocking {
     AnsiConsole.systemInstall()
+
+    try {
+        initConfig()
+    } catch (e: Exception) {
+        println("读取配置文件出错：$e".red())
+        println("请关闭程序自行编辑msnconfig.txt，或按回车重新设置配置文件".yellow())
+        readln()
+        requireString("警告：重新设置配置文件将会覆盖原有配置，确定要继续吗？\n输入YES继续".yellow()) { it == "YES" }
+        setAndSaveConfig()
+    }
 
     if (args.isNotEmpty() && args[0] == "--server") {
         println("正在以服务端模式运行\n".cyan())
@@ -82,7 +93,7 @@ fun main(args: Array<String>) = runBlocking {
             when (operation) {
                 1 -> sync()
                 2 -> interactiveSetSyncVersion()
-                3 -> interactiveSetConfig()
+                3 -> setAndSaveConfig()
                 4 -> generateSyncInfo()
                 5 -> {
                     println("程序将在5s后自动退出".yellow())
@@ -97,6 +108,8 @@ fun main(args: Array<String>) = runBlocking {
 }
 
 suspend fun sync() {
+    if (version.isEmpty()) interactiveSetSyncVersion()
+
     println(">>> 开始同步mod".cyan())
     println()
     syncMod(version)

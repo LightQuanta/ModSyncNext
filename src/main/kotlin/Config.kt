@@ -8,7 +8,11 @@ import net.peanuuutz.tomlkt.Toml
 import net.peanuuutz.tomlkt.TomlComment
 import java.io.File
 
-val globalConfig: Config by lazy { getConfig() }
+var globalConfig = Config(
+    version = "2.0",
+    sync = SyncConfig(),
+    minecraft = MinecraftConfig()
+)
 
 @Serializable
 data class Config(
@@ -21,7 +25,7 @@ data class Config(
 @Serializable
 data class SyncConfig(
     @TomlComment("同步服务器")
-    var server: String,
+    var server: String = "",
     @TomlComment("是否自动更新同步程序")
     var autoUpdate: Boolean = false,
     @TomlComment("是否在程序启动后自动开始同步")
@@ -50,7 +54,7 @@ enum class ActionAfterSync {
 @Serializable
 data class MinecraftConfig(
     @TomlComment("要同步的Minecraft版本")
-    var version: String,
+    var version: String = "",
     @TomlComment("是否开启版本隔离")
     var isolate: Boolean = true,
     @TomlComment("是否同步配置文件（仅在配置文件不存在时同步）")
@@ -71,14 +75,22 @@ fun interactiveSetSyncVersion() {
     val version = requireStringOrDefault(
         "请输入要同步的Minecraft版本（当前为${globalConfig.minecraft.version.yellow()}）",
         globalConfig.minecraft.version
-    )
+    ) { it.isNotEmpty() }
     globalConfig.minecraft.version = version
 
     File("msnconfig.txt").writeText(Toml.encodeToString(globalConfig))
     println("修改成功！\n".green())
 }
 
-fun interactiveSetConfig() {
+fun setAndSaveConfig() {
+    val config = interactiveSetConfig()
+    globalConfig.sync = config.sync
+    globalConfig.minecraft = config.minecraft
+    File("msnconfig.txt").writeText(Toml.encodeToString(config))
+    println("已保存配置文件！\n".green())
+}
+
+fun interactiveSetConfig(): Config {
     println("\n开始设置配置文件，请输入新配置，不输入内容则表示不更改配置".cyan())
     val server = requireStringOrDefault(
         "请输入同步服务器（当前为${globalConfig.sync.server.yellow()}）",
@@ -114,7 +126,7 @@ fun interactiveSetConfig() {
     val version = requireStringOrDefault(
         "请输入要同步的Minecraft版本（当前为${globalConfig.minecraft.version.yellow()}）",
         globalConfig.minecraft.version
-    )
+    ) { it.isNotEmpty() }
 
     val isolate = requireBooleanOrDefault(
         "是否开启版本隔离（当前为${globalConfig.minecraft.isolate.toString().yellow()}）",
@@ -126,31 +138,36 @@ fun interactiveSetConfig() {
         globalConfig.minecraft.syncConfig
     )
 
-    globalConfig.sync = SyncConfig(
-        server = server,
-        autoSync = autoSync,
-        actionAfterSync = actionAfterSync,
-        command = command,
-        autoUpdate = autoUpdate
+    return Config(
+        version = "2.0",
+        sync = SyncConfig(
+            server = server,
+            autoSync = autoSync,
+            actionAfterSync = actionAfterSync,
+            command = command,
+            autoUpdate = autoUpdate
+        ),
+        minecraft = MinecraftConfig(
+            version = version,
+            isolate = isolate,
+            syncConfig = syncConfig
+        )
     )
-    globalConfig.minecraft = MinecraftConfig(
-        version = version,
-        isolate = isolate,
-        syncConfig = syncConfig
-    )
-
-    File("msnconfig.txt").writeText(Toml.encodeToString(globalConfig))
-    println("已保存配置文件！\n".green())
 }
 
-private fun getConfig(): Config {
-    if (File("msnconfig.txt").exists()) return Toml.decodeFromString(File("msnconfig.txt").readText())
-
-    val syncServer: String =
-        requireString("请输入同步服务器（不是Minecraft版本）") { it.startsWith("http://") || it.startsWith("https://") }
-            .trim('/')
+fun initConfig() {
+    if (File("msnconfig.txt").exists()) {
+        val config: Config = Toml.decodeFromString(
+            File("msnconfig.txt").readText()
+        )
+        globalConfig = config
+        return
+    }
 
     if (File("mcsyncconfig-1.0.json").exists()) {
+        val syncServer: String =
+            requireString("请输入同步服务器（不是Minecraft版本）") { it.startsWith("http://") || it.startsWith("https://") }
+                .trim('/')
         val oldConfig: ConfigLegacy = Json.decodeFromString(File("mcsyncconfig-1.0.json").readText())
         val newConfig = Config(
             version = "2.0",
@@ -174,26 +191,11 @@ private fun getConfig(): Config {
         )
         File("msnconfig.txt").writeText(Toml.encodeToString(newConfig))
         println("已迁移旧版配置文件！".green())
-        return newConfig
+        globalConfig = newConfig
+        return
     }
 
-    val minecraftVersion = requireString("请输入要同步的Minecraft版本")
-
-    val defaultConfig = Config(
-        version = "2.0",
-        sync = SyncConfig(
-            server = syncServer,
-            autoSync = false,
-            actionAfterSync = ActionAfterSync.DoNothing,
-            command = "",
-            autoUpdate = false
-        ),
-        minecraft = MinecraftConfig(
-            version = minecraftVersion,
-            isolate = true,
-            syncConfig = true
-        )
-    )
-    File("msnconfig.txt").writeText(Toml.encodeToString(defaultConfig))
-    return defaultConfig
+    val newConfig = interactiveSetConfig()
+    globalConfig = newConfig
+    File("msnconfig.txt").writeText(Toml.encodeToString(globalConfig))
 }

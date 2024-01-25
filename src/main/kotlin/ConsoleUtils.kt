@@ -49,7 +49,7 @@ fun requireStringOrDefault(message: String, default: String, condition: (String)
     while (true) {
         print("$message\n> ")
         val temp = readln()
-        if (temp.isBlank()) {
+        if (temp.isBlank() && condition(default)) {
             print("> \u001B[1A" + default.brightBlack() + "\n")
             return default
         }
