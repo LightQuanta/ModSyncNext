@@ -4,9 +4,16 @@ plugins {
 }
 
 group = "tech.lq0.modSyncNext"
-version = "0.2"
+version = "0.2.1"
+
+tasks.register("generateVersion") {
+    doLast {
+        project.file("src/main/resources/version").writeText(version.toString())
+    }
+}
 
 tasks.jar {
+    dependsOn("generateVersion")
     manifest {
         attributes["Main-Class"] = "tech.lq0.modSyncNext.MainKt"
     }

@@ -1,5 +1,8 @@
 package tech.lq0.modSyncNext
 
+import com.github.kittinunf.fuel.coroutines.awaitByteArrayResponseResult
+import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
+import com.github.kittinunf.fuel.httpGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -54,24 +57,18 @@ fun main(args: Array<String>) = runBlocking {
         }
     }
 
-    var updateChecked = false
     var synced = false
 
+    println("ModSyncNext".cyan() + " by ".brightBlack() + "Light_Quanta".cyan())
+    println("同步版本：" + version.yellow())
+    println()
+
+    if (globalConfig.sync.autoUpdate) {
+        autoUpdate()
+    }
+
+
     while (true) {
-        println("ModSyncNext".cyan() + " by ".brightBlack() + "Light_Quanta".cyan())
-        println("同步版本：" + version.yellow())
-        println()
-
-        if (globalConfig.sync.autoUpdate && !updateChecked) {
-            println("正在检查更新".cyan())
-
-            // TODO 自动更新
-
-            println("当前版本已是最新！".cyan())
-            updateChecked = true
-            println()
-        }
-
         // 自动同步
         if (globalConfig.sync.autoSync && !synced) {
             sync()
@@ -83,8 +80,9 @@ fun main(args: Array<String>) = runBlocking {
                 1. 开始自动同步
                 2. 修改要同步的Minecraft版本
                 3. 修改配置文件
-                4. 生成同步文件
-                5. 退出程序
+                4. 检查更新
+                5. 生成同步文件
+                6. 退出程序
                 
                 """.trimIndent().green()
             )
@@ -94,8 +92,9 @@ fun main(args: Array<String>) = runBlocking {
                 1 -> sync()
                 2 -> interactiveSetSyncVersion()
                 3 -> setAndSaveConfig()
-                4 -> generateSyncInfo()
-                5 -> {
+                4 -> autoUpdate()
+                5 -> generateSyncInfo()
+                6 -> {
                     println("程序将在5s后自动退出".yellow())
                     delay(5.seconds)
                     AnsiConsole.systemUninstall()
@@ -106,6 +105,45 @@ fun main(args: Array<String>) = runBlocking {
         synced = true
     }
 }
+
+suspend fun autoUpdate() {
+    val classLoader = Thread.currentThread().contextClassLoader
+    val resourceAsStream = classLoader.getResourceAsStream("version")!!
+    val currentVersion = resourceAsStream.bufferedReader().use { it.readText() }
+
+    println("正在检查更新，当前版本：$currentVersion".cyan())
+
+    val server = globalConfig.sync.server
+    "$server/msnversion.txt".httpGet().awaitStringResponseResult().third.fold(
+        { data -> data },
+        { error ->
+            println("获取版本信息出错：$error".red())
+            null
+        }
+    )?.let { newVersion ->
+        if (newVersion != currentVersion) {
+            println("发现新版本 $newVersion ，正在自动更新".cyan())
+//            val path = object {}.javaClass.protectionDomain.codeSource.location.toURI().path
+
+            val tempFile = File("ModSyncNext-$newVersion.jar")
+
+            "$server/ModSyncNext-$newVersion.jar".httpGet().awaitByteArrayResponseResult().third.fold(
+                { data -> data },
+                { error ->
+                    println("获取版本信息出错：$error".red())
+                    null
+                }
+            )?.let { data ->
+                tempFile.writeBytes(data)
+                exitWithHint("下载新版本成功！请手动将".cyan() + " ModSyncNext-$newVersion.jar ".yellow() + "重命名为".cyan() + " ModSyncNext.jar ".yellow() + "，再重启本程序".cyan())
+            }
+        } else {
+            println("当前版本 $currentVersion 已是最新！".cyan())
+        }
+    }
+    println()
+}
+
 
 suspend fun sync() {
     if (version.isEmpty()) interactiveSetSyncVersion()
