@@ -7,8 +7,8 @@ group = "tech.lq0.modSyncNext"
 version = "0.2.3"
 
 tasks.register("generateVersion") {
-    doLast {
-        project.file("src/main/resources/version").writeText(version.toString())
+    doFirst {
+        project.file("build/resources/main/version").writeText(version.toString())
     }
 }
 
