@@ -17,6 +17,22 @@ private val server = globalConfig.sync.server.trim('/')
 private fun Map<String, String>.printModsInfo() =
     println(this.map { (k, v) -> v.yellow() + " -> " + k.blue() }.joinToString("\n").ifEmpty { "（无）" })
 
+suspend fun reinstallVersion(version: String) {
+    if (!File("./.minecraft/versions/$version").exists()) {
+        println("当前版本 $version 不存在！".red())
+        return
+    }
+    val input =
+        requireString("警告：将删除版本 ".red() + version.yellow() + " 并重新安装来进行修复，是否继续？输入YES继续".red())
+    if (input == "YES") {
+        println("正在删除 $version".red())
+        File("./.minecraft/versions/$version").deleteRecursively()
+        println("删除完成！".green())
+        println("开始同步 $version".cyan())
+        syncMod(version)
+    }
+}
+
 suspend fun ensureVersionExist(version: String) {
     if (getVersionList().any { it.name == version }) return
 
