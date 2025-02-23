@@ -47,11 +47,26 @@ fun serverModSync() {
     val version = requireString("请输入要同步的服务器名称") { n -> n in versionList }
     println("正在同步 $version ...".cyan())
 
+    // 读取旧mod列表信息
+    val csvFile = File("./MSN/server/filelist-$version.csv")
+    val oldModsInfo = csvFile.readText().split("\n").map { it.split(",").reversed() }.associate { it[0] to it[1] }
+
+    // 写入新mod列表信息
     readFileHashCache()
-    val hash = computeAllHashForFolder("./mods/$version")
-    val csv = hash.map { (k, v) -> "$v,$k" }.joinToString("\n")
-    File("./MSN/server/filelist-$version.csv").writeText(csv)
+    val newModsInfo = computeAllHashForFolder("./mods/$version")
+    csvFile.writeText(newModsInfo.map { (k, v) -> "$v,$k" }.joinToString("\n"))
     writeFileHashCache()
+
+    // 将要上传的新mod复制到临时文件夹
+    val modsToUpload = newModsInfo.keys - oldModsInfo.keys
+    val tempFolder = File("./temp/").also { it.mkdirs() }
+
+    for (hash in modsToUpload) {
+        val mod = newModsInfo[hash]
+        val modFile = File("./mods/$version/$mod")
+        val tempModFile = File("./temp/$mod")
+        modFile.copyTo(tempModFile, true)
+    }
 
     val process =
         Runtime.getRuntime().exec(command.replace("{version}", version))
@@ -70,4 +85,7 @@ fun serverModSync() {
         println()
         println("同步失败，请重试或检查配置文件".red())
     }
+
+    // 记得清空新mod
+    tempFolder.deleteRecursively()
 }

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "tech.lq0.modSyncNext"
-version = "0.2.3"
+version = "0.2.4"
 
 tasks.register("generateVersion") {
     doFirst {
