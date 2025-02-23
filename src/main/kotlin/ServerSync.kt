@@ -49,7 +49,9 @@ fun serverModSync() {
 
     // 读取旧mod列表信息
     val csvFile = File("./MSN/server/filelist-$version.csv")
-    val oldModsInfo = csvFile.readText().split("\n").map { it.split(",").reversed() }.associate { it[0] to it[1] }
+    val oldModsInfo = runCatching {
+        csvFile.readText().split("\n").map { it.split(",").reversed() }.associate { it[0] to it[1] }
+    }.getOrDefault(mapOf())
 
     // 写入新mod列表信息
     readFileHashCache()
